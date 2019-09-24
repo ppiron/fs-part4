@@ -15,8 +15,42 @@ const favoriteBlog = blogs => {
   return res
 }
 
+const mostBlogs = blogs => {
+  const blogsPerAuthor = blogs.reduce((acc, val) => {
+    if (acc[val.author] === undefined) {
+      return { ...acc, [val.author]: blogs.filter(blog => blog.author === val.author).length }
+    } else {
+      return acc
+    }
+  }, {})
+  return {
+    author: Object.keys(blogsPerAuthor).filter(author => blogsPerAuthor[author] === Math.max(...Object.values(blogsPerAuthor)))[0],
+    blogs: Math.max(...Object.values(blogsPerAuthor))
+  }
+}
+
+const mostLikes = blogs => {
+  const likesPerAuthor = blogs.reduce((acc, val) => {
+    if (acc[val.author] === undefined) {
+      return {
+        ...acc, [val.author]: blogs.filter(blog => blog.author === val.author).reduce((acc, val) => {
+          return acc + val.likes
+        }, 0)
+      }
+    } else {
+      return acc
+    }
+  }, {})
+  return {
+    author: Object.keys(likesPerAuthor).filter(author => likesPerAuthor[author] === Math.max(...Object.values(likesPerAuthor)))[0],
+    likes: Math.max(...Object.values(likesPerAuthor))
+  }
+}
+
 module.exports = {
   dummy,
   totalLikes,
-  favoriteBlog
+  favoriteBlog,
+  mostBlogs,
+  mostLikes
 }
