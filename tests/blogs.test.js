@@ -127,6 +127,19 @@ test('each blog has an id property', async () => {
   })
 })
 
+test('a blog can be deleted', async () => {
+  let response = await api.get('/api/blogs')
+  const id = response.body.map(blog => blog.id)[0]
+
+  await api
+    .delete(`/api/blogs/${id}`)
+    .expect(204)
+
+  response = await api.get('/api/blogs')
+  expect(response.body.length).toBe(initialBlogs.length - 1)
+
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
