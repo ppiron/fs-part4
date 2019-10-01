@@ -5,15 +5,17 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const middleware = require('./utils/middleware')
 const blogsRouter = require('./controllers/blogs')
+const config = require('./utils/config')
+const logger = require('./utils/logger')
 
-const mongoUrl = 'mongodb://localhost/bloglist'
+const mongoUrl = config.MONGODB_URI
 
 mongoose.connect(mongoUrl, { useNewUrlParser: true })
   .then(() => {
-    console.log('connected to MongoDB')
+    logger.info('connected to MongoDB')
   })
   .catch((error) => {
-    console.log('error connection to MongoDB:', error.message)
+    logger.error('error connection to MongoDB:', error.message)
   })
 
 
