@@ -1,6 +1,7 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
+const jwt = require('jsonwebtoken')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', '-blogs')
@@ -24,19 +25,22 @@ blogsRouter.get('/:id', async (request, response, next) => {
 blogsRouter.post('/', async (request, response, next) => {
   const blog = request.body
   if (!blog.title && !blog.url) {
-    response.status(400).end()
-    return
+    return response.status(400).end()
   }
   if (!blog.likes) {
     blog.likes = 0
   }
-  const users = await User.find({})
-  const user = users[0]
-  const blogDoc = new Blog({
-    ...blog,
-    user: user._id
-  })
   try {
+    const token = request.token
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const user = await User.findById(decodedToken.id)
+    const blogDoc = new Blog({
+      ...blog,
+      user: user._id
+    })
     const savedBlog = await blogDoc.save()
     user.blogs = user.blogs.concat(savedBlog._id)
     await user.save()
@@ -64,8 +68,19 @@ blogsRouter.put('/:id', async (request, response, next) => {
 
 blogsRouter.delete('/:id', async (request, response, next) => {
   try {
-    await Blog.findByIdAndRemove(request.params.id)
-    response.status(204).end()
+    const token = request.token
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    if (!token || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const user = await User.findById(decodedToken.id)
+    const blog = await Blog.findById(request.params.id)
+    if (user._id.toString() === blog.user.toString()) {
+      await blog.remove()
+      response.status(204).end()
+    } else {
+      response.status(401).send({ error: 'Unauthorized' })
+    }
   }
   catch (exception) {
     next(exception)

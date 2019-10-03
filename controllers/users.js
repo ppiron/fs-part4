@@ -1,8 +1,6 @@
 const usersRouter = require('express').Router()
 const User = require('../models/user')
-const simplecrypt = require('simplecrypt')
-
-const sc = simplecrypt()
+const bcrypt = require('bcryptjs')
 
 usersRouter.post('/', async (request, response, next) => {
   const body = request.body
@@ -13,7 +11,8 @@ usersRouter.post('/', async (request, response, next) => {
     return response.status(400).send({ error: 'Password should be at least 3 characters long' })
   }
   try {
-    const passwordHash = sc.encrypt(body.password)
+    const salt = await bcrypt.genSalt(10)
+    const passwordHash = await bcrypt.hash(body.password, salt)
 
     const user = new User({
       username: body.username,
@@ -31,7 +30,7 @@ usersRouter.post('/', async (request, response, next) => {
 })
 
 usersRouter.get('/', async (request, response) => {
-  const users = await User.find({}).populate('blogs', '-likes')
+  const users = await User.find({}).populate('blogs', { user: 0, id: 0 })
   response.json(users.map(u => u.toJSON()))
 })
 
